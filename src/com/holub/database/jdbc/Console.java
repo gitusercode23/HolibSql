@@ -59,7 +59,7 @@ public class Console
 	{	sqlIn.setFont( new Font("Monospaced", Font.PLAIN, 14) );
 	}
 
-	private JTextArea sqlOut = new JTextArea(20, 60);
+	JTextArea sqlOut = new JTextArea(20, 60);
 	{	sqlOut.setFont( new Font("Monospaced", Font.PLAIN, 14) );
 	}
 
@@ -140,48 +140,90 @@ public class Console
 		mainFrame.getContentPane().add( addThis, constraint );
 	}
 	//----------------------------------------------------------------------
-	private void processSQL()
-	{	
-		String input 		= sqlIn.getText().replaceAll("\\s+", " ");
+	void processSQL() {
+		String input = sqlIn.getText().replaceAll("\\s+", " ");
 		String statements[] = input.split(";");
 
 		String line = "====================================\n";
 
 		sqlIn.setText("");
 
-
-		for( int i = 0; i < statements.length; ++i )
-		{	try
-			{	statements[i] = statements[i].trim();
-				if( statements[i].length() == 0 )
+		for (int i = 0; i < statements.length; ++i) {
+			try {
+				statements[i] = statements[i].trim();
+				if (statements[i].length() == 0) {
 					continue;
-
-				if( !(statements[i].startsWith("SELECT") || statements[i].startsWith("select")) )
-				{	int	status = statement.executeUpdate(statements[i]);
-					sqlOut.setText( 
-						sqlOut.getText() + line +
-						"Processed: " + statements[i] +
-						"\nStatus=" + String.valueOf(status) + "\n");
 				}
-				else
-				{	ResultSet results = statement.executeQuery( statements[i] );
+
+				if (!(statements[i].startsWith("SELECT") || statements[i].startsWith("select"))) {
+					int status = statement.executeUpdate(statements[i]);
 					sqlOut.setText(
 							sqlOut.getText() + line +
-							"Processed: " + statements[i] + 
-							"\nResults:\n" + resultSetasString(results) );
+									"Processed: " + statements[i] +
+									"\nStatus=" + String.valueOf(status) + "\n");
+				} else {
+					if (containsMultipleTables(statements[i])) {
+						String transformedSQL = transformToJoinSyntax(statements[i]);
+						ResultSet results = statement.executeQuery(transformedSQL);
+						sqlOut.setText(
+								sqlOut.getText() + line +
+										"Processed: " + statements[i] +
+										"\nResults:\n" + resultSetasString(results));
+					} else {
+						ResultSet results = statement.executeQuery(statements[i]);
+						sqlOut.setText(
+								sqlOut.getText() + line +
+										"Processed: " + statements[i] +
+										"\nResults:\n" + resultSetasString(results));
+					}
 				}
-			}
-			catch( Exception e )
-			{
+			} catch (Exception e) {
 				String message =
-					"Error while processing statement:\n\t"
-					+ statements[i] + "\n"
-					+ e.toString();
+						"Error while processing statement:\n\t"
+								+ statements[i] + "\n"
+								+ e.toString();
 
-				sqlOut.setText	( sqlOut.getText() + line + message );
-				displayException( message, e );
+				sqlOut.setText(sqlOut.getText() + line + message);
+				displayException(message, e);
 			}
 		}
+	}
+
+	private boolean containsMultipleTables(String sql) {
+		String[] parts = sql.split("(?i)FROM");
+		return parts.length > 2;
+	}
+
+	private String transformToJoinSyntax(String sql) {
+		String[] parts = sql.split("(?i)FROM");
+		String[] tableConditions = parts[1].trim().split("(?i)WHERE");
+		String[] tables = tableConditions[0].trim().split(",");
+
+		StringBuilder builder = new StringBuilder();
+		builder.append(parts[0].trim());
+		builder.append(" FROM ");
+		builder.append(tables[0].trim());
+
+		for (int i = 1; i < tables.length; i++) {
+			String tableName = tables[i].trim().replaceAll("\\s+", "");
+			String onCondition = getConditionByTableName(tableName, tableConditions[1].trim());
+			builder.append(" JOIN ");
+			builder.append(tableName);
+			builder.append(" ON ");
+			builder.append(onCondition);
+		}
+
+		return builder.toString();
+	}
+
+	private String getConditionByTableName(String tableName, String conditionString) {
+		String[] conditions = conditionString.split("(?i)AND");
+		for (String condition : conditions) {
+			if (condition.contains(tableName)) {
+				return condition.trim();
+			}
+		}
+		return "";
 	}
 	//----------------------------------------------------------------------
 	private void displayException( String message, Exception e )
