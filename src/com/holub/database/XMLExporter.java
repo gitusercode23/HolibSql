@@ -1,0 +1,74 @@
+package com.holub.database;
+
+import java.io.*;
+import java.util.*;
+
+public class XMLExporter {
+    private PrintWriter out;
+    private String[] columnNames;
+    private String tableName;
+
+    public XMLExporter(PrintWriter outputWriter) {
+        this.out = outputWriter;
+    }
+
+    public void startTable() {
+        out.println("<table>");
+    }
+
+    public void storeMetadata(String tableName, int width, int height, Iterator<String> columnNames) {
+        this.tableName = tableName;
+        this.columnNames = new String[width];
+        int index = 0;
+        while (columnNames.hasNext() && index < width) {
+            this.columnNames[index++] = columnNames.next();
+        }
+    }
+
+    public void storeRow(Iterator<String> data) {
+        out.print("<row>");
+        while (data.hasNext()) {
+            out.print("<column>" + data.next() + "</column>");
+        }
+        out.println("</row>");
+    }
+
+    public void endTable() {
+        out.println("</table>");
+    }
+
+    public static void main(String[] args) {
+        try {
+            String csvFilePath = "C:/dp2023/name.csv";
+
+            PrintWriter outputWriter = new PrintWriter("output.xml");
+
+            FileReader fileReader = new FileReader(csvFilePath);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+
+            XMLExporter exporter = new XMLExporter(outputWriter);
+
+            String[] columnNames = { "first", "last", "addrId" };
+            List<String> columnList = Arrays.asList(columnNames);
+
+            exporter.startTable();
+            exporter.storeMetadata("NameTable", columnList.size(), -1, columnList.iterator());
+
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                String[] rowData = line.split(",");
+                exporter.storeRow(Arrays.asList(rowData).iterator());
+            }
+
+            exporter.endTable();
+
+            outputWriter.close();
+            bufferedReader.close();
+            fileReader.close();
+
+            System.out.println("CSV exported to XML successfully!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
