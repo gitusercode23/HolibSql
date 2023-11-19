@@ -2,6 +2,16 @@ HolubSQL.jar
 Version 1.0
 Released 27 Sept., 2004
 
+Contains HTMLExporter.java, XML Exporter.java, and XML Importer.java. There are also bug modification codes for Console. java.
+
+HTMLExporter is used to export CSV files from a specified directory into HTML files.
+
+The XML Exporter is used to export CSV files in the specified directory into XML files.
+
+XML Importer is used to export XML files from a specified directory into CSV files.
+
+Console has fixed a bug in federated queries, allowing for successful execution of SQL without join on.
+
 /*  (c) 2004 Allen I. Holub. All rights reserved.
  *
  *  This code may be used freely by yourself with the following
