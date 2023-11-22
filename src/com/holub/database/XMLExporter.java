@@ -3,7 +3,7 @@ package com.holub.database;
 import java.io.*;
 import java.util.*;
 
-public class XMLExporter {
+public class XMLExporter implements Table.Exporter {
     private PrintWriter out;
     private String[] columnNames;
     private String tableName;
@@ -12,20 +12,23 @@ public class XMLExporter {
         this.out = outputWriter;
     }
 
-    public void startTable() {
+    @Override
+    public void startTable() throws IOException {
         out.println("<table>");
     }
 
-    public void storeMetadata(String tableName, int width, int height, Iterator<String> columnNames) {
+    @Override
+    public void storeMetadata(String tableName, int width, int height, Iterator columnNames) throws IOException {
         this.tableName = tableName;
         this.columnNames = new String[width];
         int index = 0;
         while (columnNames.hasNext() && index < width) {
-            this.columnNames[index++] = columnNames.next();
+            this.columnNames[index++] = (String) columnNames.next();
         }
     }
 
-    public void storeRow(Iterator<String> data) {
+    @Override
+    public void storeRow(Iterator data) throws IOException {
         out.print("<row>");
         while (data.hasNext()) {
             out.print("<column>" + data.next() + "</column>");
@@ -33,9 +36,12 @@ public class XMLExporter {
         out.println("</row>");
     }
 
-    public void endTable() {
+    @Override
+    public void endTable() throws IOException {
         out.println("</table>");
     }
+
+    // Optional: Implement any additional methods from Table.Exporter interface if needed
 
     public static void main(String[] args) {
         try {
